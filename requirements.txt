@@ -1,0 +1,14 @@
+gradio
+os
+pathlib
+dotenv
+requests
+json
+pandas
+datetime
+numpy
+langchain_community
+langchain
+langchain_core
+langchain_openai
+
