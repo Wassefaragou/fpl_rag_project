@@ -8,6 +8,8 @@ from langchain.schema import Document
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 
 class FPLRagSystem:
     def __init__(self, openai_api_key, model_name="gpt-3.5-turbo"):
@@ -71,33 +73,41 @@ class FPLRagSystem:
         retriever = self.vector_store.as_retriever(search_kwargs={"k": 5})
         
         # Create the prompt template
-        
         template = """
-        You are a Fantasy Premier League expert assistant. Use the following information about FPL players to answer the question.
-        
-        Context information from the FPL database:
-        {context}
-        
-        Question: {question}
-        
-        When answering:
-        1. If the context doesn't contain relevant information, say what you know about the topic but clarify that you don't have current FPL data on this specific point.
-        2. Cite specific stats when they're available in the context.
-        3. Be concise and to the point.
-        4. If appropriate, suggest actions the user might take based on the information (e.g., transfers, captain picks).
-        
-        Answer:
-        """
+You are a Fantasy Premier League (FPL) expert assistant.
+
+Use the following context from the FPL database to help answer the user's question:
+{context}
+
+User's Question:
+{question}
+
+Instructions for your response:
+- While generating the answer look in your ganeral knowledge and see if what in database is correct or not.
+- If relevant information is available from the context, cite specific player stats and facts.
+- If no direct context is available, answer based on your general FPL knowledge and clearly mention that recent FPL data for this point is unavailable.
+- Be concise, accurate, and friendly.
+- Whenever appropriate, suggest actionable advice (e.g., transfer tips, captaincy picks, wildcard usage).
+- Structure your answers clearly for easy reading.
+- Always keep the tone professional, knowledgeable, and approachable.
+
+Begin your answer:
+"""
         prompt = ChatPromptTemplate.from_template(template)
-        
-        # Create the chain
-        self.chain = (
-            {"context": retriever, "question": lambda x: x}
-            | prompt
-            | self.llm
-            | StrOutputParser()
-        )
-        
+
+        memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True,k=2)
+
+    # Build Conversational Retrieval Chain
+        self.chain = ConversationalRetrievalChain.from_llm(
+        llm=self.llm,
+        retriever=retriever,
+        memory=memory,
+        combine_docs_chain_kwargs={
+            "prompt": prompt,
+        },
+        return_source_documents=False,   
+        verbose=False)
+    
         print("Retrieval chain set up successfully")
     
     def query(self, question):
@@ -108,5 +118,5 @@ class FPLRagSystem:
         
         if not hasattr(self, 'chain'):
             self.setup_retrieval_chain()
-        
-        return self.chain.invoke(question)
+        result = self.chain.invoke({"question": question})
+        return result["answer"]
