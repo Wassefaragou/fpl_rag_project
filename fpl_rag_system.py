@@ -71,6 +71,7 @@ class FPLRagSystem:
         retriever = self.vector_store.as_retriever(search_kwargs={"k": 5})
         
         # Create the prompt template
+        
         template = """
         You are a Fantasy Premier League expert assistant. Use the following information about FPL players to answer the question.
         

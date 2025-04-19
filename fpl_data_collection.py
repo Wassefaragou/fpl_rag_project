@@ -17,23 +17,23 @@ def fetch_fpl_data():
     teams_df = pd.DataFrame(data['teams'])
     
     # Add team name to player data
-    players_df = players_df.merge(teams_df[['id', 'name']], 
+    players_df = players_df.merge(teams_df[['id', 'name','position']], 
                                   left_on='team', 
                                   right_on='id', 
                                   suffixes=('', '_team'))
+    players_df.rename(columns={'name': 'team_name','position':'position_team'}, inplace=True)
    
     
     # Select relevant columns
     selected_columns = [
-        'id', 'web_name', 'first_name', 'second_name',
-        'element_type', 'selected_by_percent', 'now_cost', 'form',
+        'id', 'web_name', 'first_name', 'second_name','team_name',
+        'position_team','element_type', 'selected_by_percent', 'now_cost', 'form',
         'points_per_game', 'total_points', 'minutes', 'goals_scored',
         'assists', 'clean_sheets', 'goals_conceded', 'yellow_cards',
         'red_cards', 'saves', 'bonus', 'bps', 'influence',
         'creativity', 'threat', 'ict_index', 'value_season',
         'transfers_in', 'transfers_out'
     ]
-    
     players_df = players_df[selected_columns]
     
     # Replace element_type with actual position
@@ -41,7 +41,8 @@ def fetch_fpl_data():
         1: 'GKP',
         2: 'DEF',
         3: 'MID',
-        4: 'FWD'
+        4: 'FWD',
+        5: 'MANAGER'
     }
     players_df['position'] = players_df['element_type'].map(position_map)
     
@@ -53,7 +54,7 @@ def fetch_fpl_data():
     
     # Fetch detailed player data for each player
     player_details = {}
-    for player_id in players_df['id'].head(10):  # Limit to 10 for example (remove .head(10) for all)
+    for player_id in players_df['id']:  
         try:
             player_history = requests.get(f"{base_url}element-summary/{player_id}/").json()
             player_details[player_id] = player_history
@@ -69,7 +70,9 @@ def prepare_documents(players_df, player_details):
     # Basic player info
     for _, player in players_df.iterrows():
         doc = f"""
-Player: {player['first_name']} {player['second_name']} ({player['web_name']})
+Player: {player['first_name']} {player['second_name']} ({player['web_name']})   
+Team: {player['team_name']}
+Position team: {player['position_team']}
 Position: {player['position']}
 Price: £{player['price']}M
 Selected by: {player['selected_by_percent']}%
@@ -98,7 +101,9 @@ Data as of: {player['data_date']}
             'metadata': {
                 'player_id': player['id'],
                 'player_name': f"{player['first_name']} {player['second_name']}",
-                'position': player['position']
+                'position': player['position'],
+                'team_name': player['team_name'],
+                'doc_type': 'basic_info'
             }
         })
     
