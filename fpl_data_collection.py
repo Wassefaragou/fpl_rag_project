@@ -38,12 +38,12 @@ def fetch_fpl_data():
     
     # Replace element_type with actual position
     position_map = {
-        1: 'GKP',
-        2: 'DEF',
-        3: 'MID',
-        4: 'FWD',
-        5: 'MANAGER'
-    }
+    1: 'Goalkeeper',
+    2: 'Defender',
+    3: 'Midfielder',
+    4: 'Forward',
+    5: 'Manager'
+}
     players_df['position'] = players_df['element_type'].map(position_map)
     
     # Convert cost to actual £ value
