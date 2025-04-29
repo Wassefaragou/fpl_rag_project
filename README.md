@@ -13,7 +13,7 @@ This project is still under active development. Expect frequent changes and impr
 ## 📥 Clone the Repository
 
 ```bash
-git clone https://github.com/Wassefaragou/fpl-rag-project.git
+git clone https://github.com/Wassefaragou/fpl_rag_project.git
 cd fpl-rag-assistant
 ```
 ---
